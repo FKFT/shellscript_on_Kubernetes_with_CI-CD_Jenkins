@@ -1,5 +1,7 @@
 ## Prerequisites
 
+- **Run Kubernetes_debian**: This script is to automatically install Kubernetes through Kubeadm on a debian machine skip this part if you already have a cluster
+
 - **Bash 4.0+**: This script requires Bash version 4.0 or higher.
 
 - **Run setupKUBECONFIG.sh**: This script is required to be run before running the Jenkinsfile. Please ensure to execute this setup first in the lab before proceeding with the Jenkinsfile.
