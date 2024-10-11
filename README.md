@@ -6,6 +6,10 @@
 
 - **Run setupKUBECONFIG.sh**: This script is required to be run before running the Jenkinsfile. Please ensure to execute this setup first in the lab before proceeding with the Jenkinsfile.
 
+## Deployment
+
+- **Jenkins file**: once the cluster is up and running and jenkins is running in your local host make a pipeline job and copy the jenkins file and place it on the pipeline
+
 ## Troubleshooting
 
 - **docker login**:  
