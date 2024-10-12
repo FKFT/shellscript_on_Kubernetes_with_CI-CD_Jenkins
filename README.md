@@ -1,3 +1,7 @@
+## Note
+
+- **Kodekloud**: This project was deployed in the CI/CD playground of kubernetes
+
 ## Prerequisites
 
 - **Run Kubernetes_debian**: This script is to automatically install Kubernetes through Kubeadm on a debian machine skip this part if you already have a cluster
