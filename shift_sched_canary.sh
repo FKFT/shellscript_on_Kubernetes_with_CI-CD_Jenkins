@@ -1,0 +1,151 @@
+#!/bin/bash
+data_file="/mnt/data/data.txt"
+
+# Load existing data from the file into an array
+declare -a name_arrays
+if [ -s "$data_file" ]; then
+    while IFS= read -r line; do
+        name_arrays+=("$line")
+    done < "$data_file"
+fi
+
+# Counter for multiple shifts within a team
+count_shift_per_team() {
+    local team="$1"
+    local shift="$2"
+    local count=0
+    for entry in "${name_arrays[@]}"; do
+        if [[ "$entry" == *"Team=$team"* && "$entry" == *"Shift=$shift"* ]]; then
+            ((count++))
+        fi
+    done
+    echo $count
+}
+
+# Define colors
+COLOR_RESET="\033[0m"
+COLOR_DARK_GREEN="\033[103m"  # Dark green background
+
+COLOR_LIGHT_GREEN="\033[1;32m"    # Light green for title
+COLOR_ERROR="\033[1;31m"
+COLOR_SUCCESS="\033[1;32m"
+
+echo ""
+echo -e "${COLOR_DARK_GREEN}------------------------------------------------------------------${COLOR_RESET}"
+
+
+echo -e "${COLOR_LIGHT_GREEN}"
+cat << "EOF"
+                        ###                  ###
+                        #######,         #######
+                        ###########  ###########
+                        ###########  ###########
+                        ###########  ###########
+                            ##%%%%%  %%%%%##.
+                          ,,,,,,(%%  %%%,,,,,,
+                          ,,,,,,,,,  ,,,,,,,,,
+                          ,,,,,,,,.   ,,,,,,,,
+                          ,,,,            ,,,,
+EOF
+echo -e "${COLOR_RESET}"
+
+# Centered title with ASCII art in light green
+echo -e "${COLOR_LIGHT_GREEN}"
+cat << "EOF"
+ ____  _     _  __ _     ____       _              _       _      
+/ ___|| |__ (_)/ _| |_  / ___|  ___| |__   ___  __| |_   _| | ___ 
+\___ \| '_ \| | |_| __| \___ \ / __| '_ \ / _ \/ _` | | | | |/ _ \
+ ___) | | | | |  _| |_   ___) | (__| | | |  __/ (_| | |_| | |  __/
+|____/|_| |_|_|_|  \__| |____/ \___|_| |_|\___|\__,_|\__,_|_|\___|
+
+            _                _ _           _   _             
+           / \   _ __  _ __ | (_) ___ __ _| |_(_) ___  _ __  
+          / _ \ | '_ \| '_ \| | |/ __/ _` | __| |/ _ \| '_ \ 
+         / ___ \| |_) | |_) | | | (_| (_| | |_| | (_) | | | |
+        /_/   \_\ .__/| .__/|_|_|\___\__,_|\__|_|\___/|_| |_|
+                |_|   |_|                                    
+EOF
+echo -e "${COLOR_RESET}"
+echo -e "${COLOR_DARK_GREEN}------------------------------------------------------------------${COLOR_RESET}"
+
+while true; do
+    echo ""
+    # Input for name
+    read -p "Enter employee name: " varname
+
+    if [ "$varname" == "print" ]; then
+        if [ ${#name_arrays[@]} -eq 0 ] && [ ! -s "$data_file" ]; then
+            echo ""
+            echo -e "${COLOR_ERROR}No data inputted${COLOR_RESET}"
+            echo ""
+            break
+        fi
+        echo ""
+        echo -e "${COLOR_DARK_GREEN}-----------------------------------------------------------------------------------${COLOR_RESET}"
+        # Print table header
+        printf "%-20s %-20s %-20s %-20s\n" "Team" "Name" "Shift" "Time"
+        echo -e "${COLOR_DARK_GREEN}$(printf "%-20s %-20s %-20s %-20s" "--------------------" "--------------------" "--------------------" "--------------------")${COLOR_RESET}"
+
+        # Read and print data from the array
+        for entry in "${name_arrays[@]}"; do
+            team=$(echo "$entry" | awk -F' ' '{print $4}' | cut -d'=' -f2)
+            name=$(echo "$entry" | awk -F' ' '{print $1}' | cut -d'=' -f2)
+            shift=$(echo "$entry" | awk -F' ' '{print $2}' | cut -d'=' -f2)
+            time=$(echo "$entry" | awk -F' ' '{print $3}' | cut -d'=' -f2)
+            printf "%-20s %-20s %-20s %-20s\n" "$team" "$name" "$shift" "$time"
+        done
+        echo ""
+        break
+    elif [ "$varname" == "clear" ]; then
+        > "$data_file"
+        name_arrays=()
+        echo ""
+        echo -e "${COLOR_SUCCESS}Database cleared.${COLOR_RESET}"
+        echo ""
+        exit 1
+    else
+        prevname=$(echo "$varname" | awk '{for(i=1;i<=NF;i++) $i=toupper(substr($i,1,1)) tolower(substr($i,2))}1' | tr -d ' ')
+
+        # Input for shift
+        read -p "Enter shift: " varsched
+        varsched=$(echo "$varsched" | awk '{print toupper(substr($0,1,1))tolower(substr($0,2))}')
+        case $varsched in
+            Morning) vartime="Morning 6am-3pm";;
+            Mid) vartime="Mid 2pm-11pm";;
+            Night) vartime="Night 10pm-7am";;
+            *) echo ""
+               echo -e "${COLOR_ERROR}Invalid input in Schedule. Please input (Morning), (Mid), or (Night) only. Try again.${COLOR_RESET}"
+               continue;;
+        esac
+
+        # Input for team
+        read -p "Enter team: " varteam
+        varteam=$(echo "$varteam" | tr '[:lower:]' '[:upper:]')
+        case $varteam in
+            A1|A2|A3|B1|B2|B3)
+                # Check if the same shift has 2 people in the same team
+                shift_count=$(count_shift_per_team "$varteam" "$vartime")
+                if [ $shift_count -ge 2 ]; then
+                    echo ""
+                    echo -e "${COLOR_ERROR}The team $varteam, $vartime shift already has 2 people. Exiting the program.${COLOR_RESET}"
+                    echo ""
+                    exit 1
+                fi
+
+                # Send the data to the array
+                entry="Name=$prevname Shift=$vartime Team=$varteam"
+                name_arrays+=("$entry")
+
+                # Save to file
+                printf "%s\n" "$entry" >> "$data_file"
+                echo ""
+                echo -e "${COLOR_SUCCESS}Employee added successfully.${COLOR_RESET}"
+                ;;
+            *) echo ""
+               echo -e "${COLOR_ERROR}Invalid input in Team. Please input (A1-A3), or (B1-B3) only. Try again.${COLOR_RESET}"
+               continue;;
+        esac
+    fi
+done
+
+echo -e "${COLOR_DARK_GREEN}-----------------------------------------------------------------------------------${COLOR_RESET}"
